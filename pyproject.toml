@@ -32,4 +32,4 @@ classifiers = [
 Repository = "https://github.com/edanssandes/profilerDQ"
 
 [project.scripts]
-profile-dq = "profiler_dq:__main__.py"
+profiler-dq = "profiler_dq.__main__:main"

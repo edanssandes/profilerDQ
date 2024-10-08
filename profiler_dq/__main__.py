@@ -79,8 +79,7 @@ def carregar_parametros_ambientes(arquivo='ambientes.json'):
         parametros = json.load(f)
     return parametros    
     
-    
-if __name__ == '__main__':
+def main():
     parametros_ambientes = carregar_parametros_ambientes()
     args = tratar_argumentos(id_ambientes=parametros_ambientes.keys())
     
@@ -103,3 +102,7 @@ if __name__ == '__main__':
         df_tabelas.to_excel(writer, sheet_name="Tabelas", index=False)
         df_colunas.to_excel(writer, sheet_name="Colunas", index=False)
         df_colunas_sample.to_excel(writer, sheet_name="Amostra", index=False)
+
+
+if __name__ == '__main__':
+    main()
