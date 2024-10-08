@@ -38,9 +38,6 @@ def tratar_argumentos(id_ambientes):
     parser.add_argument('--schema', type=str, metavar="SCHEMA",
                         help=f'Nome do schema ou do owner do banco de dados (opcional).')
     
-    parser.add_argument('--output', type=str, metavar="ARQUIVO", default='dicionario.xlsx',
-                        help=f'Nome do arquivo de saída.')
-
     parser.add_argument('--tables', type=str, nargs='+', metavar="TABELA", required=False,
                         help=f'Nome das tabelas de interesse (opcional).')
     
@@ -50,6 +47,8 @@ def tratar_argumentos(id_ambientes):
     parser.add_argument('--amostra', type=int, metavar="N", default=AMOSTRA_PADRAO,
                         help=f'Número de registros na amostra.')
     
+    parser.add_argument('--output', type=str, metavar="ARQUIVO", default='dicionario.xlsx',
+                        help=f'Nome do arquivo de saída.')
     
     args = parser.parse_args()
 
