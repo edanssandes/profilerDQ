@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["profile_dq/*"]
+
+[project]
+name = "profileDQ"
+version = "0.0.1"
+dependencies = [
+  "openpyxl>=3.1.2",
+  "pandas>=2.0.3",
+  "pycpfcnpj>=1.8",
+  "pyodbc==5.1.0",
+  "SQLAlchemy>=2.0.35",
+]
+requires-python = ">=3.8"
+authors = [
+  {name = "Edans Sandes"},
+]
+description = "CLI tool for database profiling and data quality assessment in ETL processes"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["profile", "data quality", "ETL", "database", "CLI"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+
+[project.urls]
+Repository = "https://github.com/edanssandes/profilerDQ"
+
+[project.scripts]
+profile-dq = "profile_dq:__main__.py"
