@@ -5,7 +5,7 @@ import os
 
 
 from .ambientes import Ambiente
-from .info_colunas import analise_colunas_sample
+from .info_colunas import analise_colunas_sample, analise_colunas_sql
 
 AMOSTRA_PADRAO = 10000
 
@@ -94,7 +94,12 @@ def main():
     df_tabelas = ambiente.obter_tabelas()
 
     df_colunas_sample = analise_colunas_sample(ambiente, sample_size=args.amostra, filtro=args.where)
-    
+    df_colunas_validacao = analise_colunas_sql(ambiente, df_colunas_sample, filtro=args.where)
+
+    df_colunas_validacao_1 = df_colunas_validacao[df_colunas_validacao['num_columns'] == 1]
+    df_colunas_validacao_1 = df_colunas_validacao_1.pivot(index=('database_name', 'schema_name', 'table_name', 'column_name'), columns='title', values='result').reset_index()
+    df_colunas_sample = df_colunas_sample.merge(df_colunas_validacao_1, on=('database_name', 'schema_name', 'table_name', 'column_name'), how='outer')
+
     print(f"Gerando arquivo {args.output}")
     
     with pd.ExcelWriter(args.output) as writer:
@@ -102,6 +107,7 @@ def main():
         df_tabelas.to_excel(writer, sheet_name="Tabelas", index=False)
         df_colunas.to_excel(writer, sheet_name="Colunas", index=False)
         df_colunas_sample.to_excel(writer, sheet_name="Amostra", index=False)
+        df_colunas_validacao.to_excel(writer, sheet_name="Validacao", index=False)
 
 
 if __name__ == '__main__':

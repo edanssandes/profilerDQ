@@ -135,13 +135,13 @@ class Ambiente:
         return df_sample
 
 
-    def read_sql(self, sql, database=None, schema=None, table=None, column=None):
+    def read_sql(self, sql, database=None, schema=None, table=None, **kwargs):
         tabela = self.get_table_name(database, schema, table)
         where_clause = self.get_where_clause()
         tabela = f'(SELECT * FROM {tabela} {where_clause})'
         
         #print(sql)
-        sql = sql.format(tabela=tabela, coluna=column)
+        sql = sql.format(tabela=tabela, **kwargs)
         print(sql)
         df = pd.read_sql(sql, self._engine)
         
