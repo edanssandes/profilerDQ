@@ -91,16 +91,22 @@ class Ambiente:
         
         CAMPO_NUM_REGISTROS = 'num_registros'
         if numero_de_registros and CAMPO_NUM_REGISTROS not in self._df_tabelas.columns:
-            info = []
+            num_registros = []
+            num_registros_distintos = []
 
             for x,v in self._df_tabelas.iterrows():
                 print(f'Contando registros {x}: {v.database_name}.{v.schema_name}.{v.table_name}')
 
-                count = self.obter_numero_registros(v.database_name, v.schema_name, v.table_name)
-                print(count)
-                info.append(count)
+                num = self.obter_numero_registros(v.database_name, v.schema_name, v.table_name)
+                num_registros.append(num)
 
-            self._df_tabelas[CAMPO_NUM_REGISTROS] = info
+                num_distintos = self.obter_numero_registros_distintos(v.database_name, v.schema_name, v.table_name)
+                print(num, num_distintos)
+                num_registros_distintos.append(num_distintos)
+
+
+            self._df_tabelas[CAMPO_NUM_REGISTROS] = num_registros
+            self._df_tabelas['num_registros_distintos'] = num_registros_distintos
             self._df_tabelas['filtro'] = self._filtro
         
         return self._df_tabelas
@@ -109,6 +115,15 @@ class Ambiente:
     def obter_numero_registros(self, database, schema, table):
         try:
             df = self.read_sql('select count(1) as v FROM {tabela} x', database=database, schema=schema, table=table)
+            count = df.iloc[0,0]
+            return count
+        except Exception as e:
+            print(e)
+            return -1
+
+    def obter_numero_registros_distintos(self, database, schema, table):
+        try:
+            df = self.read_sql('select count(1) as v FROM (select distinct * from {tabela}) x', database=database, schema=schema, table=table)
             count = df.iloc[0,0]
             return count
         except Exception as e:
