@@ -93,6 +93,10 @@ def main():
     df_colunas = ambiente.obter_colunas()
     df_tabelas = ambiente.obter_tabelas()
 
+    if len(df_colunas) == 0 or len(df_tabelas) == 0:
+        print("FATAL: Nenhuma tabela/coluna encontrada. Execute o programa novamente com filtros diferentes.")
+        exit(1)
+
     df_colunas_sample = analise_colunas_sample(ambiente, sample_size=args.amostra, filtro=args.where)
     df_colunas_validacao = analise_colunas_sql(ambiente, df_colunas_sample, filtro=args.where)
 
