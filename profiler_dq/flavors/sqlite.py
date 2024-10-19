@@ -24,6 +24,7 @@ def lista_colunas(database, schema):
     '' as database_name,
     '' as schema_name,
     table_name, 
+    'TABLE' as table_type,
     cid,
     name AS column_name, 
     type AS data_type,
@@ -33,8 +34,9 @@ def lista_colunas(database, schema):
     """    
 
 def sample(database, schema, table, colunas, num_registros, sample_size, filtro):
+    print(colunas.table_type.iloc[0])
 
-    nome_colunas = ",".join(colunas)
+    nome_colunas = ", ".join(colunas.column_name)
 
     where_clause = f"WHERE {filtro}" if filtro else ""
 

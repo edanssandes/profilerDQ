@@ -132,9 +132,8 @@ def analise_colunas_sample(ambiente, sample_size, filtro=None):
             continue
         
         colunas_selecionadas = v[v.tipo != data_types.BLOB]
-        colunas_nomes = list(colunas_selecionadas.column_name)
         colunas_tipos = v.set_index('column_name').tipo
-        df_sample = ambiente.obter_amostra(database, schema, table, colunas_nomes, num_registros, sample_size, filtro)
+        df_sample = ambiente.obter_amostra(database, schema, table, colunas_selecionadas, num_registros, sample_size, filtro)
         
         print(df_sample.shape)
         

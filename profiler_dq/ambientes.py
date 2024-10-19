@@ -138,11 +138,11 @@ class Ambiente:
         return where_clause
 
         
-    def obter_amostra(self, database, schema, table, colunas_nomes, num_registros, sample_size, filtro):
+    def obter_amostra(self, database, schema, table, colunas, num_registros, sample_size, filtro):
         if num_registros is None:
             num_registros = self.obter_numero_registros(database, schema, table)
 
-        sql = self._flavor.sample(database, schema, table, colunas_nomes, num_registros, sample_size, filtro)
+        sql = self._flavor.sample(database, schema, table, colunas, num_registros, sample_size, filtro)
         print(sql)
         df_sample = pd.read_sql(sql, self._engine)
         print(df_sample.shape)

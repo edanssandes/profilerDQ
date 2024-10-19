@@ -18,7 +18,8 @@ def lista_colunas(database, schema):
         select 
             database_name,
             NULL as schema_name,
-            table_name, 
+            table_name,
+            'TABLE' as table_type, 
             column_id, 
             column_name, 
             data_type, 
@@ -59,7 +60,7 @@ def lista_colunas(database, schema):
     
     
 
-def sample(database, schema, table, colunas, num_registros, sample_size):
+def sample(database, schema, table, colunas, num_registros, sample_size, filtro):
     sample_p = sample_size*100/num_registros
     sample_p = max(0.1, sample_p)
 
@@ -68,7 +69,7 @@ def sample(database, schema, table, colunas, num_registros, sample_size):
     else:
         sample = ''
         
-    nome_colunas = ",".join(colunas)
+    nome_colunas = ", ".join(colunas.column_name)
     where_clause = f"WHERE {filtro}" if filtro else ""
     
     return f'select {nome_colunas} FROM {database}.{table} {where_clause} {sample}'    
