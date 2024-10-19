@@ -100,9 +100,10 @@ def main():
     df_colunas_sample = analise_colunas_sample(ambiente, sample_size=args.amostra, filtro=args.where)
     df_colunas_validacao = analise_colunas_sql(ambiente, df_colunas_sample, filtro=args.where)
 
-    df_colunas_validacao_1 = df_colunas_validacao[df_colunas_validacao['num_columns'] == 1]
-    df_colunas_validacao_1 = df_colunas_validacao_1.pivot(index=('database_name', 'schema_name', 'table_name', 'column_name'), columns='title', values='result').reset_index()
-    df_colunas_sample = df_colunas_sample.merge(df_colunas_validacao_1, on=('database_name', 'schema_name', 'table_name', 'column_name'), how='outer')
+    if len(df_colunas_validacao) > 0:
+        df_colunas_validacao_1 = df_colunas_validacao[df_colunas_validacao['num_columns'] == 1]
+        df_colunas_validacao_1 = df_colunas_validacao_1.pivot(index=('database_name', 'schema_name', 'table_name', 'column_name'), columns='title', values='result').reset_index()
+        df_colunas_sample = df_colunas_sample.merge(df_colunas_validacao_1, on=('database_name', 'schema_name', 'table_name', 'column_name'), how='outer')
 
     print(f"Gerando arquivo {args.output}")
     
