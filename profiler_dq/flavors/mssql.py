@@ -45,10 +45,14 @@ def lista_colunas(database, schema):
             t.name as data_type,    
             col.max_length,
             col.precision
-        from sys.tables as tab
-            inner join sys.columns as col
-                on tab.object_id = col.object_id
-            left join sys.types as t
+        from (
+            select object_id, schema_id, name from sys.tables 
+            union all
+            select object_id, schema_id, name from sys.views
+        ) as tab
+        inner join sys.columns as col
+            on tab.object_id = col.object_id
+        left join sys.types as t
             on col.user_type_id = t.user_type_id
         order by schema_name,
             table_name, 
