@@ -234,7 +234,7 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
                     else:
                         columns = v.query(filtro)
                 except Exception as e:
-                    print(f"Erro ao aplicar filtro da validação {k}")
+                    print(f"Erro ao aplicar filtro da validação {sql_name}")
                     print(f"Filtro: {filtro} - ", e)
                     continue
 
@@ -260,7 +260,23 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
             from itertools import product
 
             print(column_vars)
-            print(column_vars.items())
+            # produtório de todas as combinações de colunas
+            num_combinacoes = 1
+            for var in column_vars.values():
+                num_combinacoes *= len(var)
+
+            if num_combinacoes == 0:
+                print(f"WARNING: Ignorando validação {sql_name}. Nenhuma combinação de colunas encontrada.")
+                continue
+
+            MAX_COMBINACOES = 16
+            if num_combinacoes > MAX_COMBINACOES:
+                # Ignora combinações com mais de MAX_COMBINACOES colunas
+                print(f"WARNING: Ignorando combinações de colunas. {num_combinacoes}>{MAX_COMBINACOES} combinações.")
+                continue
+
+            print(f"Gerando {num_combinacoes} combinações de colunas")
+
 
             for r in product(*[[(k,i) for i in v] for k,v in column_vars.items()]):
                 kwargs = dict(r)
