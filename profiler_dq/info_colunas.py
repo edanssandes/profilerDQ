@@ -140,6 +140,7 @@ def analise_colunas_sample(ambiente, sample_size, filtro=None):
         
         v['num_registros'] = num_registros
         v['tamanho_amostra'] = df_sample.shape[0]
+        v['registros_unique'] = df_sample.drop_duplicates().shape[0]
         v['filtro'] = filtro
 
         
