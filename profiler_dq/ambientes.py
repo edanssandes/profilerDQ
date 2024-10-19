@@ -123,7 +123,7 @@ class Ambiente:
 
     def obter_numero_registros_distintos(self, database, schema, table):
         try:
-            df = self.read_sql('select count(1) as v FROM (select distinct * from {tabela}) x', database=database, schema=schema, table=table)
+            df = self.read_sql('select count(1) as v FROM (select distinct * from {tabela} y ) x', database=database, schema=schema, table=table)
             count = df.iloc[0,0]
             return count
         except Exception as e:
