@@ -59,7 +59,7 @@ def analise_conteudo_cpf_cnpj(nome_coluna, tipo_coluna, s):
     c_cpf = sum(is_11)
     c_cnpj = sum(is_14)
 
-    cpf_cnpj_validos = s.apply(lambda x : cpfcnpj.validate(x))
+    cpf_cnpj_validos = s.apply(lambda x : cpfcnpj.validate(x) if x else False)
     c_cpf_cnpj_validos = sum(cpf_cnpj_validos)
     c_cpf_validos = sum(cpf_cnpj_validos & is_11)
     c_cnpj_validos = sum(cpf_cnpj_validos & is_14)
