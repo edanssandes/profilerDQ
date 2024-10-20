@@ -241,10 +241,10 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
 
                 column_names_list = columns['column_name'].tolist()
 
-                if variable == DEFAULT_VARIABLE and variable not in column_vars:
-                    column_vars[variable] = column_names_list
+                #if variable == DEFAULT_VARIABLE and variable not in column_vars:
+                #    column_vars[variable] = column_names_list
 
-                if variable in column_vars:
+                if variable in column_vars or variable == DEFAULT_VARIABLE:
                     # Sufixes variable name with a number until it is unique
                     i = 1
                     while f"{variable}_{i}" in column_vars:
@@ -281,21 +281,24 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
 
             for r in product(*[[(k,i) for i in v] for k,v in column_vars.items()]):
                 kwargs = dict(r)
+                column_names = list(kwargs.values())
+                column_names_strings = ','.join(column_names)
+                num_columns = len(column_names)
+                print(column_names_strings)
+
                 print('---', database, schema, table, kwargs)
+                if num_columns == 1 and DEFAULT_VARIABLE not in kwargs:
+                    # Se houver apenas uma coluna, criamos um alias para ela
+                    kwargs[DEFAULT_VARIABLE] = kwargs[list(kwargs.keys())[0]]
                 df_validacao = ambiente.read_sql(sql, database=database, schema=schema, table=table, **kwargs)
                 ret = df_validacao.iloc[0,0]
 
-                kwargs.pop(DEFAULT_VARIABLE)
-                column_names = list(kwargs.values())
-                print(column_names)
-                column_names_strings = ','.join(column_names)
-                num_columns = len(column_names)
 
                 returns.append({
                     'database_name': database,
                     'schema_name': schema,
                     'table_name': table,
-                    'title': sql_name if num_columns == 1 else f"{sql_name}[{column_names_strings}]",
+                    'title': f"{sql_name}[{column_names_strings}]",
                     'result': ret,
                     'column_name': column_names_strings,
                     'num_columns': num_columns
