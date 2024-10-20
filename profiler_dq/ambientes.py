@@ -92,7 +92,6 @@ class Ambiente:
         CAMPO_NUM_REGISTROS = 'num_registros'
         if numero_de_registros and CAMPO_NUM_REGISTROS not in self._df_tabelas.columns:
             num_registros = []
-            num_registros_distintos = []
 
             for x,v in self._df_tabelas.iterrows():
                 print(f'Contando registros {x}: {v.database_name}.{v.schema_name}.{v.table_name}')
@@ -100,18 +99,9 @@ class Ambiente:
                 num = self.obter_numero_registros(v.database_name, v.schema_name, v.table_name)
                 num_registros.append(num)
 
-                THRESHOLD_NUM_DISTINTOS = 10000
-                if num < THRESHOLD_NUM_DISTINTOS:
-                    num_distintos = self.obter_numero_registros_distintos(v.database_name, v.schema_name, v.table_name)
-                else:
-                    # Se o número de registros for muito grande, não contamos os registros distintos por questões de desempenho
-                    num_distintos = None
-                print(num, num_distintos)
-                num_registros_distintos.append(num_distintos)
-
+                print(num)
 
             self._df_tabelas[CAMPO_NUM_REGISTROS] = num_registros
-            self._df_tabelas['num_registros_distintos'] = num_registros_distintos
             self._df_tabelas['filtro'] = self._filtro
         
         return self._df_tabelas
