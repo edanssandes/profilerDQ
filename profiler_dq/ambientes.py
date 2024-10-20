@@ -100,7 +100,12 @@ class Ambiente:
                 num = self.obter_numero_registros(v.database_name, v.schema_name, v.table_name)
                 num_registros.append(num)
 
-                num_distintos = self.obter_numero_registros_distintos(v.database_name, v.schema_name, v.table_name)
+                THRESHOLD_NUM_DISTINTOS = 10000
+                if num < THRESHOLD_NUM_DISTINTOS:
+                    num_distintos = self.obter_numero_registros_distintos(v.database_name, v.schema_name, v.table_name)
+                else:
+                    # Se o número de registros for muito grande, não contamos os registros distintos por questões de desempenho
+                    num_distintos = None
                 print(num, num_distintos)
                 num_registros_distintos.append(num_distintos)
 
