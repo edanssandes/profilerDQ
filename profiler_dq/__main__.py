@@ -107,7 +107,7 @@ def main():
 
     print(f"Gerando arquivo {args.output}")
     
-    with pd.ExcelWriter(args.output) as writer:
+    with pd.ExcelWriter(args.output, engine="xlsxwriter") as writer:
         # Salvando Planilhas
         df_tabelas.to_excel(writer, sheet_name="Tabelas", index=False)
         df_colunas.to_excel(writer, sheet_name="Colunas", index=False)
