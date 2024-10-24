@@ -7,6 +7,7 @@ from pycpfcnpj import cpfcnpj
 from . import data_types
 
 funcoes_analises = []
+DIR_VALIDACAO = 'validacao'
 
 # Decorator que indica o nome das colunas retornadas por cada função
 def analise_colunas(*args):
@@ -184,20 +185,17 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
     # Carregar todos os arquivos sql da pasta "validacao" (se existir)
 
     validacoes_f = []
-    dir_validacao = 'validacao'
-    if os.path.exists(dir_validacao):
-        for f in os.listdir(dir_validacao):
-            if f.endswith('.sql'):
-                with open(os.path.join(dir_validacao, f)) as file:
-                    sql = file.read()
-                    validacoes_f.append((f, sql, call_sql))
-            elif f.endswith('.py'):
+    if os.path.exists(DIR_VALIDACAO):
+        for script_name in os.listdir(DIR_VALIDACAO):
+            if script_name.endswith('.sql'):
+                validacoes_f.append((script_name, call_sql))
+            elif script_name.endswith('.py'):
                 # Load .py file Module 
                 import importlib.util
-                spec = importlib.util.spec_from_file_location(f, os.path.join(dir_validacao, f))
+                spec = importlib.util.spec_from_file_location(script_name, os.path.join(DIR_VALIDACAO, script_name))
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
-                validacoes_f.append((f, None, module.validate))
+                validacoes_f.append((script_name, module.validate))
 
 
 
@@ -209,23 +207,41 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
     for (database, schema, table), v in df_tabelas_groupby:
         print('**---', database, schema, table, v.shape)
 
-        for sql_name, sql, func in validacoes_f:
-            ret = func(ambiente, database, schema, table, v, sql_name, sql)
+        for script_name, func in validacoes_f:
+            ret = func(ambiente, database, schema, table, v, script_name)
 
             if ret is None:
                 # Não houve retorno
                 continue
 
             for r in ret:
-                r['database_name'] = database
-                r['schema_name'] = schema
-                r['table_name'] = table
+                columns = r['columns']
+                column_names_strings = ','.join(columns)
+                num_columns = len(columns)
 
-                returns.append(r)
+                title = f"{script_name}[{column_names_strings}]"
+
+                result = {
+                    'database_name': database,
+                    'schema_name': schema,
+                    'table_name': table,
+                    'script': script_name,
+                    'columns': column_names_strings,
+                    'num_columns': num_columns,
+
+                    'title': title,
+                    'result': r['result'],
+                }
+
+
+                returns.append(result)
 
     return pd.DataFrame(returns)
     
-def call_sql(ambiente, database, schema, table, df_groupby, sql_name, sql):
+def call_sql(ambiente, database, schema, table, df_groupby, script_name):
+    with open(os.path.join(DIR_VALIDACAO, script_name)) as file:
+        sql = file.read()
+
     #df[k] = None
     # Separete header (all first lines starting with #) from sql body
     lines = sql.split('\n')
@@ -280,7 +296,7 @@ def call_sql(ambiente, database, schema, table, df_groupby, sql_name, sql):
         column_vars[variable] = columns['column_name'].tolist()
         if variable == DEFAULT_VARIABLE:
             column_vars[variable] = column_vars[variable]
-        print(f"Aplicando filtro {filtro} da validação {sql_name}: {variable}={column_vars[variable]}")
+        print(f"Aplicando filtro {filtro} da validação {script_name}: {variable}={column_vars[variable]}")
 
     # iterates through a cartesian product combining every row in column_vars dataframes
     from itertools import product
@@ -292,7 +308,7 @@ def call_sql(ambiente, database, schema, table, df_groupby, sql_name, sql):
         num_combinacoes *= len(var)
 
     if num_combinacoes == 0:
-        print(f"WARNING: Ignorando validação {sql_name}. Nenhuma combinação de colunas encontrada.")
+        print(f"WARNING: Ignorando validação {script_name}. Nenhuma combinação de colunas encontrada.")
         return None
 
     MAX_COMBINACOES = 16
@@ -309,7 +325,7 @@ def call_sql(ambiente, database, schema, table, df_groupby, sql_name, sql):
         column_names = list(kwargs.values())
         column_names_strings = ','.join(column_names)
         num_columns = len(column_names)
-        print(column_names_strings)
+        print(column_names)
 
         print('---', database, schema, table, kwargs)
         if num_columns == 1 and DEFAULT_VARIABLE not in kwargs:
@@ -319,11 +335,8 @@ def call_sql(ambiente, database, schema, table, df_groupby, sql_name, sql):
         ret = df_validacao.iloc[0,0]  
 
         returns.append({
-            'title': f"{sql_name}[{column_names_strings}]",
+            'columns': column_names,
             'result': ret,
-            'column_name': column_names_strings,
-            'num_columns': num_columns,
-            'sql_name': sql_name,
-        })     
+        })
 
     return returns      

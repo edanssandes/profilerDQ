@@ -102,16 +102,16 @@ def main():
 
     if len(df_colunas_validacao) > 0:
         df_colunas_validacao_1 = df_colunas_validacao[df_colunas_validacao['num_columns'] == 1]
-        df_colunas_validacao_1 = df_colunas_validacao_1.pivot(index=('database_name', 'schema_name', 'table_name', 'column_name'), columns='title', values='result').reset_index()
-        df_colunas_sample = df_colunas_sample.merge(df_colunas_validacao_1, on=('database_name', 'schema_name', 'table_name', 'column_name'), how='outer')
+        df_colunas_validacao_1 = df_colunas_validacao_1.pivot(index=('database_name', 'schema_name', 'table_name', 'columns'), columns='script', values='result').reset_index()
+        df_colunas_sample = df_colunas_sample.merge(df_colunas_validacao_1.rename(columns={'columns': 'column_name'}), on=('database_name', 'schema_name', 'table_name', 'column_name'), how='outer')
 
     print(f"Gerando arquivo {args.output}")
     
     with pd.ExcelWriter(args.output, engine="xlsxwriter") as writer:
         # Salvando Planilhas
         df_tabelas.to_excel(writer, sheet_name="Tabelas", index=False)
-        df_colunas.to_excel(writer, sheet_name="Colunas", index=False)
-        df_colunas_sample.to_excel(writer, sheet_name="Amostra", index=False)
+        #df_colunas.to_excel(writer, sheet_name="Colunas", index=False)
+        df_colunas_sample.to_excel(writer, sheet_name="Colunas", index=False)
         df_colunas_validacao.to_excel(writer, sheet_name="Validacao", index=False)
 
 
