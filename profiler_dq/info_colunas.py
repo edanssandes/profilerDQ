@@ -183,127 +183,147 @@ def analise_colunas_sql(ambiente, df_colunas_sample, filtro=None):
 
     # Carregar todos os arquivos sql da pasta "validacao" (se existir)
 
-    validacoes_sql = {}
+    validacoes_f = []
     dir_validacao = 'validacao'
     if os.path.exists(dir_validacao):
         for f in os.listdir(dir_validacao):
             if f.endswith('.sql'):
                 with open(os.path.join(dir_validacao, f)) as file:
                     sql = file.read()
-                    validacoes_sql[f] = sql
+                    validacoes_f.append((f, sql, call_sql))
+            elif f.endswith('.py'):
+                # Load .py file Module 
+                import importlib.util
+                spec = importlib.util.spec_from_file_location(f, os.path.join(dir_validacao, f))
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                validacoes_f.append((f, None, module.validate))
+
+
 
 
     df_tabelas_groupby = df_colunas_sample.groupby(['database_name', 'schema_name', 'table_name'])
 
     returns = []
 
-    for (database, schema, table),v in df_tabelas_groupby:
+    for (database, schema, table), v in df_tabelas_groupby:
         print('**---', database, schema, table, v.shape)
 
-        for sql_name, sql in validacoes_sql.items():
-            #df[k] = None
-            import re
-            # Separete header (all first lines starting with #) from sql body
-            lines = sql.split('\n')
-            headers = []
-            while lines and lines[0].startswith('#'):
-                headers.append(lines.pop(0))
-            sql = '\n'.join(lines)    
-            print(headers)
-            print('****')
-            print(sql)
+        for sql_name, sql, func in validacoes_f:
+            ret = func(ambiente, database, schema, table, v, sql_name, sql)
 
-
-            column_vars = {}
-
-            DEFAULT_VARIABLE = 'coluna'
-
-            # process header
-            for h in headers:
-                m = re.match(r'^#\s*filtro(\[\w+\])?:\s*(.*?)\s*$', h, re.IGNORECASE)
-                if m:
-                    variable, filtro = m.groups()
-                    if variable is None:
-                        variable = DEFAULT_VARIABLE
-                else:
-                    variable = DEFAULT_VARIABLE
-                    filtro = '*'
-
-                try:
-                    if filtro == '*' or not filtro:
-                        columns = v
-                    else:
-                        columns = v.query(filtro)
-                except Exception as e:
-                    print(f"Erro ao aplicar filtro da validação {sql_name}")
-                    print(f"Filtro: {filtro} - ", e)
-                    continue
-
-                column_names_list = columns['column_name'].tolist()
-
-                #if variable == DEFAULT_VARIABLE and variable not in column_vars:
-                #    column_vars[variable] = column_names_list
-
-                if variable in column_vars or variable == DEFAULT_VARIABLE:
-                    # Sufixes variable name with a number until it is unique
-                    i = 1
-                    while f"{variable}_{i}" in column_vars:
-                        i += 1
-                    print(f"Redefining variable {variable} to {variable}_{i}")
-                    variable = f"{variable}_{i}"
-
-                column_vars[variable] = columns['column_name'].tolist()
-                if variable == DEFAULT_VARIABLE:
-                    column_vars[variable] = column_vars[variable]
-                print(f"Aplicando filtro {filtro} da validação {sql_name}: {variable}={column_vars[variable]}")
-
-            # iterates through a cartesian product combining every row in column_vars dataframes
-            from itertools import product
-
-            print(column_vars)
-            # produtório de todas as combinações de colunas
-            num_combinacoes = 1
-            for var in column_vars.values():
-                num_combinacoes *= len(var)
-
-            if num_combinacoes == 0:
-                print(f"WARNING: Ignorando validação {sql_name}. Nenhuma combinação de colunas encontrada.")
+            if ret is None:
+                # Não houve retorno
                 continue
 
-            MAX_COMBINACOES = 16
-            if num_combinacoes > MAX_COMBINACOES:
-                # Ignora combinações com mais de MAX_COMBINACOES colunas
-                print(f"WARNING: Ignorando combinações de colunas. {num_combinacoes}>{MAX_COMBINACOES} combinações.")
-                continue
+            for r in ret:
+                r['database_name'] = database
+                r['schema_name'] = schema
+                r['table_name'] = table
 
-            print(f"Gerando {num_combinacoes} combinações de colunas")
-
-
-            for r in product(*[[(k,i) for i in v] for k,v in column_vars.items()]):
-                kwargs = dict(r)
-                column_names = list(kwargs.values())
-                column_names_strings = ','.join(column_names)
-                num_columns = len(column_names)
-                print(column_names_strings)
-
-                print('---', database, schema, table, kwargs)
-                if num_columns == 1 and DEFAULT_VARIABLE not in kwargs:
-                    # Se houver apenas uma coluna, criamos um alias para ela
-                    kwargs[DEFAULT_VARIABLE] = kwargs[list(kwargs.keys())[0]]
-                df_validacao = ambiente.read_sql(sql, database=database, schema=schema, table=table, **kwargs)
-                ret = df_validacao.iloc[0,0]
-
-
-                returns.append({
-                    'database_name': database,
-                    'schema_name': schema,
-                    'table_name': table,
-                    'title': f"{sql_name}[{column_names_strings}]",
-                    'result': ret,
-                    'column_name': column_names_strings,
-                    'num_columns': num_columns
-                })
-                #df.loc[_,k] = ret    
+                returns.append(r)
 
     return pd.DataFrame(returns)
     
+def call_sql(ambiente, database, schema, table, df_groupby, sql_name, sql):
+    #df[k] = None
+    # Separete header (all first lines starting with #) from sql body
+    lines = sql.split('\n')
+    headers = []
+    while lines and lines[0].startswith('#'):
+        headers.append(lines.pop(0))
+    sql = '\n'.join(lines)    
+    print(headers)
+    print('****')
+    print(sql)
+
+    returns = []
+
+    column_vars = {}
+
+    DEFAULT_VARIABLE = 'coluna'
+
+    # process header
+    for h in headers:
+        m = re.match(r'^#\s*filtro(\[\w+\])?:\s*(.*?)\s*$', h, re.IGNORECASE)
+        if m:
+            variable, filtro = m.groups()
+            if variable is None:
+                variable = DEFAULT_VARIABLE
+        else:
+            variable = DEFAULT_VARIABLE
+            filtro = '*'
+
+        try:
+            if filtro == '*' or not filtro:
+                columns = df_groupby
+            else:
+                columns = df_groupby.query(filtro)
+        except Exception as e:
+            print(f"Erro ao aplicar filtro da validação {sql_name}")
+            print(f"Filtro: {filtro} - ", e)
+            continue
+
+        column_names_list = columns['column_name'].tolist()
+
+        #if variable == DEFAULT_VARIABLE and variable not in column_vars:
+        #    column_vars[variable] = column_names_list
+
+        if variable in column_vars or variable == DEFAULT_VARIABLE:
+            # Sufixes variable name with a number until it is unique
+            i = 1
+            while f"{variable}_{i}" in column_vars:
+                i += 1
+            print(f"Redefining variable {variable} to {variable}_{i}")
+            variable = f"{variable}_{i}"
+
+        column_vars[variable] = columns['column_name'].tolist()
+        if variable == DEFAULT_VARIABLE:
+            column_vars[variable] = column_vars[variable]
+        print(f"Aplicando filtro {filtro} da validação {sql_name}: {variable}={column_vars[variable]}")
+
+    # iterates through a cartesian product combining every row in column_vars dataframes
+    from itertools import product
+
+    print(column_vars)
+    # produtório de todas as combinações de colunas
+    num_combinacoes = 1
+    for var in column_vars.values():
+        num_combinacoes *= len(var)
+
+    if num_combinacoes == 0:
+        print(f"WARNING: Ignorando validação {sql_name}. Nenhuma combinação de colunas encontrada.")
+        return None
+
+    MAX_COMBINACOES = 16
+    if num_combinacoes > MAX_COMBINACOES:
+        # Ignora combinações com mais de MAX_COMBINACOES colunas
+        print(f"WARNING: Ignorando combinações de colunas. {num_combinacoes}>{MAX_COMBINACOES} combinações.")
+        return None
+
+    print(f"Gerando {num_combinacoes} combinações de colunas")
+
+
+    for r in product(*[[(k,i) for i in v] for k,v in column_vars.items()]):
+        kwargs = dict(r)
+        column_names = list(kwargs.values())
+        column_names_strings = ','.join(column_names)
+        num_columns = len(column_names)
+        print(column_names_strings)
+
+        print('---', database, schema, table, kwargs)
+        if num_columns == 1 and DEFAULT_VARIABLE not in kwargs:
+            # Se houver apenas uma coluna, criamos um alias para ela
+            kwargs[DEFAULT_VARIABLE] = kwargs[list(kwargs.keys())[0]]
+        df_validacao = ambiente.read_sql(sql, database=database, schema=schema, table=table, **kwargs)
+        ret = df_validacao.iloc[0,0]  
+
+        returns.append({
+            'title': f"{sql_name}[{column_names_strings}]",
+            'result': ret,
+            'column_name': column_names_strings,
+            'num_columns': num_columns,
+            'sql_name': sql_name,
+        })     
+
+    return returns      
