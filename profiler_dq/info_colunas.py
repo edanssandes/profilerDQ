@@ -45,7 +45,7 @@ def analise_conteudo_moda(nome_coluna, tipo_coluna, s):
 
 @analise_colunas('CPF/CNPJ', 'CPF', 'CNPJ')
 def analise_conteudo_cpf_cnpj(nome_coluna, tipo_coluna, s):
-    if tipo_coluna != data_types.STRING: return None
+    if tipo_coluna not in (data_types.STRING, data_types.NUMERIC): return None
 
     info = []
     
