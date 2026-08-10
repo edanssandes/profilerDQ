@@ -24,7 +24,7 @@ def analise_conteudo_unicidade(nome_coluna, tipo_coluna, s):
     n_missing = s.isnull().sum() 
     is_chave = (n_nunique == l - n_missing) and (n_nunique > 0)
     
-    return (n_missing/l, n_nunique/l, ('-', 'SIM')[is_chave])
+    return (n_missing/l, n_nunique/l, ('-', 'SIM')[int(is_chave)])
 
 @analise_colunas('min', 'P01', 'P25', 'P50', 'P75', 'P99', 'max')
 def analise_conteudo_percentiles(nome_coluna, tipo_coluna, s):
@@ -101,14 +101,14 @@ def analise_conteudo_prenome(nome_coluna, tipo_coluna, s):
                             'alves', 'melo', 'ribeiro', 'moura', 'cavalcante', 'castro', 'cardoso', 'fernandes',
                             'torres', 'ribeiro', 'mendes', 'barros', 'freitas', 'barros', 'nunes', 'peixoto', 'junior']
 
-    nomes_columns = prenomes_masculinos_comuns + prenomes_femininos_comuns + sobrenomes_comuns
+    nomes_columns = set(prenomes_masculinos_comuns + prenomes_femininos_comuns + sobrenomes_comuns)
 
     # Remove acentos
     s = s.str.lower().str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
 
     tokens = s.str.split()#.explode()
     # Identifica tokens que possui ao menos um nome comum
-    tokens = tokens.apply(lambda x : any([t in nomes_columns for t in x]) if x else False)
+    tokens = tokens.apply(lambda x: any(t in nomes_columns for t in x) if isinstance(x, (list, tuple)) else False)
     
 
     return (tokens.sum()/l,)
