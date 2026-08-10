@@ -28,6 +28,10 @@ def analise_conteudo_unicidade(nome_coluna, tipo_coluna, s):
 
 @analise_colunas('min', 'P01', 'P25', 'P50', 'P75', 'P99', 'max')
 def analise_conteudo_percentiles(nome_coluna, tipo_coluna, s):
+    # Convert StringDtype (PyArrow-backed) to object dtype if needed
+    if isinstance(s.dtype, pd.StringDtype):
+        s = s.astype('object')
+    
     p = s.quantile([0, 0.01, 0.25, 0.5, 0.75, 0.99, 1], interpolation='nearest')
     return p.tolist()
     
